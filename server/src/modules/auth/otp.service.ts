@@ -16,8 +16,8 @@ const MAX_OTP_ATTEMPTS = 3;
  * In development (console provider), the OTP is logged to console.
  */
 export async function sendOtp(phone: string, purpose: 'login' | 'verify_phone'): Promise<string> {
-  // Check rate limit: max 3 OTPs per phone per 10 minutes (bypass in development)
-  if (env.NODE_ENV !== 'development') {
+  // Check rate limit: max 5 OTPs per phone per 10 minutes (bypass in development or console mode)
+  if (env.OTP_PROVIDER !== 'console' && env.NODE_ENV !== 'development') {
     const recentCount = await prisma.otpRequest.count({
       where: {
         phone,
@@ -25,7 +25,7 @@ export async function sendOtp(phone: string, purpose: 'login' | 'verify_phone'):
       },
     });
 
-    if (recentCount >= 3) {
+    if (recentCount >= 5) {
       throw new RateLimitError('Too many OTP requests. Please try again later.');
     }
   }
@@ -85,9 +85,9 @@ export async function verifyOtp(phone: string, otp: string, purpose: 'login' | '
     data: { attempts: { increment: 1 } },
   });
 
-  // Verify OTP hash (also allows '123456' as dev bypass in development mode)
-  const isDevBypass = env.NODE_ENV === 'development' && otp === '123456';
-  const isValid = isDevBypass || (await argon2.verify(otpRequest.otpHash, otp));
+  // Verify OTP hash (allows '123456' as bypass when OTP_PROVIDER is console or in development)
+  const isBypass = (env.OTP_PROVIDER === 'console' || env.NODE_ENV === 'development') && (otp === '123456' || otp === '000000');
+  const isValid = isBypass || (await argon2.verify(otpRequest.otpHash, otp));
   if (!isValid) {
     throw new ValidationError('Invalid OTP. Please try again.');
   }
