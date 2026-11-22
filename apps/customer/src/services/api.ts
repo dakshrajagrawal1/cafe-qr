@@ -53,10 +53,10 @@ export const api = {
     }),
 
   // 4. Session Init
-  initSession: (tableToken: string, deviceToken: string, pin?: string) =>
+  initSession: (tableToken: string, deviceToken: string, pin?: string, forceIndependent?: boolean) =>
     request<any>('/customer/session/init', {
       method: 'POST',
-      body: JSON.stringify({ tableToken, deviceToken, pin }),
+      body: JSON.stringify({ tableToken, deviceToken, pin, forceIndependent }),
     }),
 
   // 5. Cart

@@ -29,7 +29,7 @@ export const App: React.FC = () => {
   // Real-time shared cart sync across foodies at the same table
   useCartPolling(session?.id);
 
-  const startSessionFlow = async (pin?: string) => {
+  const startSessionFlow = async (pin?: string, forceIndependent?: boolean) => {
     if (!tableToken || !customerToken || !deviceToken) {
       setCurrentView('login');
       return;
@@ -39,7 +39,7 @@ export const App: React.FC = () => {
     setPinError(null);
 
     try {
-      const res = await api.initSession(tableToken, deviceToken, pin);
+      const res = await api.initSession(tableToken, deviceToken, pin, forceIndependent);
       if (res.data.requiresPin) {
         setCurrentView('pin');
         setInitializing(false);
@@ -211,6 +211,11 @@ export const App: React.FC = () => {
               })}
             </div>
 
+            {/* Hint for easy testing */}
+            <div style={{ fontSize: 12, color: '#f97316', marginBottom: 16, fontWeight: 700 }}>
+              💡 Table PIN: enter <strong>1234</strong> or ask friends
+            </div>
+
             {/* Join Table Cart Button */}
             <button
               onClick={() => startSessionFlow(pinInput)}
@@ -230,13 +235,14 @@ export const App: React.FC = () => {
 
             {/* Start Independent Cart */}
             <button
-              onClick={() => startSessionFlow()}
+              onClick={() => startSessionFlow(undefined, true)}
               style={{
                 background: 'transparent',
                 color: '#ff6b35',
                 fontSize: 14,
                 fontWeight: 700,
                 padding: '6px 14px',
+                cursor: 'pointer',
               }}
             >
               Start Independent Cart

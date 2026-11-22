@@ -4,7 +4,7 @@ import { ValidationError } from '../../lib/errors.js';
 
 export async function initSession(req: Request, res: Response, next: NextFunction) {
   try {
-    const { tableToken, deviceToken, pin } = req.body;
+    const { tableToken, deviceToken, pin, forceIndependent } = req.body;
     if (!tableToken || !deviceToken) {
       throw new ValidationError('tableToken and deviceToken are required');
     }
@@ -14,6 +14,7 @@ export async function initSession(req: Request, res: Response, next: NextFunctio
       customerId: req.customer!.id,
       deviceToken,
       pin,
+      forceIndependent: Boolean(forceIndependent),
     });
 
     res.json({ data: result });
