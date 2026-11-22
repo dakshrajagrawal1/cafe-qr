@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: cafe-qr-api
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: server
+    buildCommand: pnpm install && pnpm build
+    startCommand: node dist/index.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: OTP_PROVIDER
+        value: console
+      - key: DATABASE_URL
+        sync: false # Set to your free TiDB connection string
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: TABLE_TOKEN_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false # e.g. https://tableqr-customer.vercel.app,https://tableqr-staff.vercel.app
+      - key: API_BASE_URL
+        sync: false # e.g. https://cafe-qr-api.onrender.com

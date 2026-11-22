@@ -1,0 +1,919 @@
+// ============================================================
+// Prisma Schema — Multi-Tenant Cafe QR Ordering Platform
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum CafeStatus {
+  pending_verification
+  approved
+  rejected
+  suspended
+}
+
+enum DocumentType {
+  business_registration
+  fssai
+  gstin
+  owner_id_proof
+  cafe_photo
+}
+
+enum DocumentStatus {
+  pending
+  approved
+  rejected
+}
+
+enum UserRole {
+  super_admin
+  owner
+  manager
+  chef
+  waiter
+}
+
+enum BillingPeriod {
+  monthly
+  quarterly
+  yearly
+  custom
+}
+
+enum SubscriptionStatus {
+  trial
+  active
+  expiring
+  grace
+  expired
+  suspended
+}
+
+enum SubPaymentMode {
+  online
+  cash
+  upi
+  bank
+}
+
+enum SubPaymentStatus {
+  pending
+  completed
+  failed
+}
+
+enum SessionStatus {
+  open
+  bill_requested
+  closed
+}
+
+enum BusinessDayStatus {
+  open
+  closed
+}
+
+enum OrderStatus {
+  pending_approval
+  approved
+  rejected
+  cancelled
+}
+
+enum DishStatus {
+  placed
+  confirmed
+  preparing
+  ready
+  served
+  cancelled
+}
+
+enum BillStatus {
+  draft
+  issued
+  paid
+  void
+}
+
+enum CustPaymentMode {
+  cash
+  online
+  upi_counter
+  split
+}
+
+enum CustPaymentStatus {
+  pending
+  completed
+  failed
+  refunded
+}
+
+enum RefundStatus {
+  pending_approval
+  approved
+  processed
+  rejected
+}
+
+enum WaiterCallType {
+  help
+  water
+  bill
+  other
+}
+
+enum WaiterCallStatus {
+  active
+  acknowledged
+  resolved
+}
+
+enum DiscountType {
+  percentage
+  fixed
+  days
+}
+
+enum AnnouncementTarget {
+  all
+  specific
+}
+
+enum TicketStatus {
+  open
+  in_progress
+  resolved
+  closed
+}
+
+enum TicketPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum OtpPurpose {
+  login
+  verify_phone
+}
+
+// ==================== PLATFORM TABLES ====================
+
+model Plan {
+  id            String        @id @default(cuid())
+  name          String
+  pricePaise    Int           @map("price_paise")
+  billingPeriod BillingPeriod @map("billing_period")
+  billingDays   Int?          @map("billing_days") // For custom period
+  trialDays     Int           @default(14) @map("trial_days")
+  isActive      Boolean       @default(true) @map("is_active")
+  isArchived    Boolean       @default(false) @map("is_archived")
+  sortOrder     Int           @default(0) @map("sort_order")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  deletedAt     DateTime?     @map("deleted_at")
+
+  features      PlanFeature[]
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model PlanFeature {
+  id           String @id @default(cuid())
+  planId       String @map("plan_id")
+  featureKey   String @map("feature_key") @db.VarChar(100)
+  featureValue String @map("feature_value") @db.VarChar(255)
+
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, featureKey])
+  @@map("plan_features")
+}
+
+model Coupon {
+  id            String       @id @default(cuid())
+  code          String       @unique @db.VarChar(50)
+  description   String?      @db.Text
+  discountType  DiscountType @map("discount_type")
+  discountValue Int          @map("discount_value") // paise or percentage*100 or days
+  maxUses       Int?         @map("max_uses")
+  usedCount     Int          @default(0) @map("used_count")
+  validFrom     DateTime     @map("valid_from")
+  validUntil    DateTime?    @map("valid_until")
+  isActive      Boolean      @default(true) @map("is_active")
+  createdBy     String?      @map("created_by")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  subscriptionPayments SubscriptionPayment[]
+
+  @@map("coupons")
+}
+
+model Announcement {
+  id            String             @id @default(cuid())
+  title         String             @db.VarChar(255)
+  message       String             @db.Text
+  target        AnnouncementTarget @default(all)
+  targetCafeIds Json?              @map("target_cafe_ids") // string[] of cafe IDs
+  isActive      Boolean            @default(true) @map("is_active")
+  startsAt      DateTime           @map("starts_at")
+  endsAt        DateTime?          @map("ends_at")
+  createdBy     String             @map("created_by")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  @@map("announcements")
+}
+
+model PlatformSettings {
+  id                   String  @id @default("singleton")
+  defaultTrialDays     Int     @default(14) @map("default_trial_days")
+  defaultGraceDays     Int     @default(3) @map("default_grace_days")
+  razorpayKeyId        String? @map("razorpay_key_id") @db.VarChar(255)
+  razorpayKeySecret    String? @map("razorpay_key_secret") @db.VarChar(255)
+  razorpayWebhookSecret String? @map("razorpay_webhook_secret") @db.VarChar(255)
+  otpProvider          String  @default("console") @map("otp_provider") @db.VarChar(50)
+  gstNumber            String? @map("gst_number") @db.VarChar(50)
+  platformName         String  @default("CafeQR") @map("platform_name") @db.VarChar(100)
+  supportEmail         String? @map("support_email") @db.VarChar(255)
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("platform_settings")
+}
+
+// ==================== CAFE TABLES ====================
+
+model Cafe {
+  id          String     @id @default(cuid())
+  name        String     @db.VarChar(255)
+  slug        String     @unique @db.VarChar(100)
+  ownerName   String     @map("owner_name") @db.VarChar(255)
+  email       String     @unique @db.VarChar(255)
+  phone       String     @db.VarChar(20)
+  address     String?    @db.Text
+  city        String?    @db.VarChar(100)
+  logoUrl     String?    @map("logo_url") @db.VarChar(500)
+  coverUrl    String?    @map("cover_url") @db.VarChar(500)
+  currency    String     @default("INR") @db.VarChar(10)
+  status      CafeStatus @default(pending_verification)
+  fssaiNumber String?    @map("fssai_number") @db.VarChar(50)
+  rejectionReason String? @map("rejection_reason") @db.Text
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  settings      CafeSettings?
+  documents     CafeDocument[]
+  users         User[]
+  tables        Table[]
+  categories    Category[]
+  items         Item[]
+  subscriptions Subscription[]
+  businessDays  BusinessDay[]
+  tableSessions TableSession[]
+  orders        Order[]
+  bills         Bill[]
+  payments      CustPayment[]
+  refunds       Refund[]
+  offers        Offer[]
+  waiterCalls   WaiterCall[]
+  supportTickets SupportTicket[]
+  auditLogs     AuditLog[]
+
+  @@index([status])
+  @@index([city])
+  @@map("cafes")
+}
+
+model CafeSettings {
+  id                   String  @id @default(cuid())
+  cafeId               String  @unique @map("cafe_id")
+  kitchenMode          Boolean @default(false) @map("kitchen_mode")
+  allowPayAtEnd        Boolean @default(true) @map("allow_pay_at_end")
+  useManagerLogin      Boolean @default(false) @map("use_manager_login")
+  gstEnabled           Boolean @default(false) @map("gst_enabled")
+  gstRate              Int     @default(500) @map("gst_rate") // 5% = 500 (basis points)
+  serviceChargeEnabled Boolean @default(false) @map("service_charge_enabled")
+  serviceChargeRate    Int     @default(1000) @map("service_charge_rate") // 10% = 1000
+  geofenceEnabled      Boolean @default(false) @map("geofence_enabled")
+  geofenceLat          Decimal? @map("geofence_lat") @db.Decimal(10, 8)
+  geofenceLng          Decimal? @map("geofence_lng") @db.Decimal(11, 8)
+  geofenceRadiusM      Int     @default(100) @map("geofence_radius_m")
+  defaultPrepTimeMin   Int     @default(15) @map("default_prep_time_min")
+  requireOwnerApprovalForRefund Boolean @default(true) @map("require_owner_approval_for_refund")
+
+  cafe Cafe @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+
+  @@map("cafe_settings")
+}
+
+model CafeDocument {
+  id              String         @id @default(cuid())
+  cafeId          String         @map("cafe_id")
+  type            DocumentType
+  documentNumber  String?        @map("document_number") @db.VarChar(100)
+  expiryDate      DateTime?      @map("expiry_date")
+  filePath        String         @map("file_path") @db.VarChar(500) // Private storage
+  originalName    String         @map("original_name") @db.VarChar(255)
+  mimeType        String         @map("mime_type") @db.VarChar(100)
+  fileSize        Int            @map("file_size") // bytes
+  status          DocumentStatus @default(pending)
+  rejectionReason String?        @map("rejection_reason") @db.Text
+  reviewedBy      String?        @map("reviewed_by")
+  reviewedAt      DateTime?      @map("reviewed_at")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  cafe Cafe @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+
+  @@index([cafeId, type])
+  @@map("cafe_documents")
+}
+
+// ==================== USERS ====================
+
+model User {
+  id               String    @id @default(cuid())
+  cafeId           String?   @map("cafe_id")
+  email            String    @unique @db.VarChar(255)
+  phone            String?   @db.VarChar(20)
+  passwordHash     String    @map("password_hash") @db.VarChar(255)
+  name             String    @db.VarChar(255)
+  role             UserRole
+  isActive         Boolean   @default(true) @map("is_active")
+  permissions      Json?     // Manager permission toggles
+  twoFactorSecret  String?   @map("two_factor_secret") @db.VarChar(255)
+  twoFactorEnabled Boolean   @default(false) @map("two_factor_enabled")
+  lastLoginAt      DateTime? @map("last_login_at")
+  lockoutUntil     DateTime? @map("lockout_until")
+  failedLoginCount Int       @default(0) @map("failed_login_count")
+  waiterPin        String?   @map("waiter_pin") @db.VarChar(10) // For waiter PIN login
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+
+  cafe Cafe? @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+
+  @@index([cafeId, role])
+  @@index([email])
+  @@map("users")
+}
+
+// ==================== TABLES ====================
+
+model Table {
+  id          String    @id @default(cuid())
+  cafeId      String    @map("cafe_id")
+  tableNumber String    @map("table_number") @db.VarChar(20)
+  label       String?   @db.VarChar(100)
+  qrSecret    String    @unique @map("qr_secret") @db.VarChar(64) // For HMAC signing
+  capacity    Int?
+  isActive    Boolean   @default(true) @map("is_active")
+  sortOrder   Int       @default(0) @map("sort_order")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  cafe     Cafe           @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  sessions TableSession[]
+  orders   Order[]
+  waiterCalls WaiterCall[]
+
+  @@unique([cafeId, tableNumber])
+  @@index([cafeId])
+  @@map("tables")
+}
+
+// ==================== BUSINESS DAY ====================
+
+model BusinessDay {
+  id               String           @id @default(cuid())
+  cafeId           String           @map("cafe_id")
+  startedBy        String           @map("started_by")
+  endedBy          String?          @map("ended_by")
+  startedAt        DateTime         @map("started_at")
+  endedAt          DateTime?        @map("ended_at")
+  openingCashPaise Int?             @map("opening_cash_paise")
+  countedCashPaise Int?             @map("counted_cash_paise")
+  expectedCashPaise Int?            @map("expected_cash_paise")
+  cashDifferencePaise Int?          @map("cash_difference_paise")
+  notes            String?          @db.Text
+  status           BusinessDayStatus @default(open)
+
+  cafe     Cafe           @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  sessions TableSession[]
+  orders   Order[]
+  bills    Bill[]
+
+  @@index([cafeId, status])
+  @@map("business_days")
+}
+
+// ==================== SESSIONS ====================
+
+model TableSession {
+  id            String        @id @default(cuid())
+  cafeId        String        @map("cafe_id")
+  tableId       String        @map("table_id")
+  businessDayId String?       @map("business_day_id")
+  pin           String        @db.VarChar(6) // 4-6 digit PIN for shared cart
+  color         String        @db.VarChar(7) // Hex color for kitchen display
+  status        SessionStatus @default(open)
+  startedAt     DateTime      @default(now()) @map("started_at")
+  endedAt       DateTime?     @map("ended_at")
+  closedBy      String?       @map("closed_by")
+  closeReason   String?       @map("close_reason") @db.Text
+
+  cafe        Cafe           @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  table       Table          @relation(fields: [tableId], references: [id])
+  businessDay BusinessDay?   @relation(fields: [businessDayId], references: [id])
+  members     SessionMember[]
+  cart        Cart?
+  orders      Order[]
+  bills       Bill[]
+  waiterCalls WaiterCall[]
+
+  @@index([cafeId, status])
+  @@index([tableId, status])
+  @@map("table_sessions")
+}
+
+model SessionMember {
+  id          String   @id @default(cuid())
+  sessionId   String   @map("session_id")
+  customerId  String   @map("customer_id")
+  deviceToken String   @map("device_token") @db.VarChar(255) // For device-bound auth
+  joinedAt    DateTime @default(now()) @map("joined_at")
+
+  session  TableSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  customer Customer     @relation(fields: [customerId], references: [id])
+  cartItems CartItem[]
+
+  @@unique([sessionId, customerId])
+  @@index([deviceToken])
+  @@map("session_members")
+}
+
+model Customer {
+  id           String    @id @default(cuid())
+  phone        String    @unique @db.VarChar(20)
+  name         String    @db.VarChar(255)
+  consentGiven Boolean   @default(false) @map("consent_given")
+  consentText  String?   @map("consent_text") @db.VarChar(500)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  lastSeenAt   DateTime  @default(now()) @map("last_seen_at")
+
+  sessionMemberships SessionMember[]
+  orders             Order[]
+
+  @@map("customers")
+}
+
+// ==================== MENU ====================
+
+model Category {
+  id            String    @id @default(cuid())
+  cafeId        String    @map("cafe_id")
+  name          String    @db.VarChar(255)
+  description   String?   @db.Text
+  imageUrl      String?   @map("image_url") @db.VarChar(500)
+  sortOrder     Int       @default(0) @map("sort_order")
+  isActive      Boolean   @default(true) @map("is_active")
+  scheduleStart String?   @map("schedule_start") @db.VarChar(5) // "08:00"
+  scheduleEnd   String?   @map("schedule_end") @db.VarChar(5) // "12:00"
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  cafe  Cafe   @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  items Item[]
+
+  @@index([cafeId, sortOrder])
+  @@map("categories")
+}
+
+model Item {
+  id            String    @id @default(cuid())
+  cafeId        String    @map("cafe_id")
+  categoryId    String    @map("category_id")
+  name          String    @db.VarChar(255)
+  description   String?   @db.Text
+  imageUrl      String?   @map("image_url") @db.VarChar(500)
+  pricePaise    Int       @map("price_paise") // Price in paise
+  isVeg         Boolean   @default(true) @map("is_veg")
+  isAvailable   Boolean   @default(true) @map("is_available")
+  isSoldOut     Boolean   @default(false) @map("is_sold_out")
+  prepTimeMin   Int?      @map("prep_time_min")
+  allergenInfo  String?   @map("allergen_info") @db.Text
+  spicyLevel    Int       @default(0) @map("spicy_level") // 0-5
+  sortOrder     Int       @default(0) @map("sort_order")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  cafe         Cafe          @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  category     Category      @relation(fields: [categoryId], references: [id])
+  optionGroups OptionGroup[]
+  cartItems    CartItem[]
+  orderItems   OrderItem[]
+
+  @@index([cafeId, categoryId])
+  @@index([cafeId, isAvailable, isSoldOut])
+  @@map("items")
+}
+
+model OptionGroup {
+  id         String  @id @default(cuid())
+  itemId     String  @map("item_id")
+  cafeId     String  @map("cafe_id")
+  name       String  @db.VarChar(255) // e.g. "Size", "Add-ons"
+  isRequired Boolean @default(false) @map("is_required")
+  minSelect  Int     @default(0) @map("min_select")
+  maxSelect  Int     @default(1) @map("max_select")
+  sortOrder  Int     @default(0) @map("sort_order")
+
+  item    Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  options Option[]
+
+  @@index([itemId])
+  @@map("option_groups")
+}
+
+model Option {
+  id              String  @id @default(cuid())
+  groupId         String  @map("group_id")
+  name            String  @db.VarChar(255)
+  extraPricePaise Int     @default(0) @map("extra_price_paise")
+  isAvailable     Boolean @default(true) @map("is_available")
+  sortOrder       Int     @default(0) @map("sort_order")
+
+  group OptionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId])
+  @@map("options")
+}
+
+// ==================== CART (Shared per session) ====================
+
+model Cart {
+  id        String   @id @default(cuid())
+  sessionId String   @unique @map("session_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  session TableSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  items   CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id                  String   @id @default(cuid())
+  cartId              String   @map("cart_id")
+  itemId              String   @map("item_id")
+  addedById           String   @map("added_by_id") // SessionMember id
+  quantity            Int      @default(1)
+  selectedOptions     Json?    @map("selected_options") // [{groupName, optionName, extraPricePaise}]
+  specialInstructions String?  @map("special_instructions") @db.Text
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  cart    Cart          @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  item    Item          @relation(fields: [itemId], references: [id])
+  addedBy SessionMember @relation(fields: [addedById], references: [id])
+
+  @@index([cartId])
+  @@map("cart_items")
+}
+
+// ==================== ORDERS ====================
+
+model Order {
+  id              String      @id @default(cuid())
+  cafeId          String      @map("cafe_id")
+  sessionId       String      @map("session_id")
+  businessDayId   String?     @map("business_day_id")
+  tableId         String      @map("table_id")
+  customerId      String?     @map("customer_id")
+  orderNumber     String      @map("order_number") @db.VarChar(20) // Per-cafe sequential
+  status          OrderStatus @default(pending_approval)
+  rejectionReason String?     @map("rejection_reason") @db.Text
+  approvedBy      String?     @map("approved_by")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  cafe        Cafe          @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  session     TableSession  @relation(fields: [sessionId], references: [id])
+  businessDay BusinessDay?  @relation(fields: [businessDayId], references: [id])
+  table       Table         @relation(fields: [tableId], references: [id])
+  customer    Customer?     @relation(fields: [customerId], references: [id])
+  items       OrderItem[]
+
+  @@index([cafeId, status])
+  @@index([cafeId, createdAt])
+  @@index([sessionId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id                     String     @id @default(cuid())
+  orderId                String     @map("order_id")
+  itemId                 String     @map("item_id") // Original ref
+  itemNameSnapshot       String     @map("item_name_snapshot") @db.VarChar(255)
+  itemPriceSnapshot      Int        @map("item_price_snapshot") // Paise at order time
+  quantity               Int        @default(1)
+  selectedOptionsSnapshot Json?     @map("selected_options_snapshot")
+  specialInstructions    String?    @map("special_instructions") @db.Text
+  isVegSnapshot          Boolean    @map("is_veg_snapshot")
+  status                 DishStatus @default(placed)
+  cancelReason           String?    @map("cancel_reason") @db.Text
+  preparedBy             String?    @map("prepared_by")
+  servedBy               String?    @map("served_by")
+  statusChangedAt        DateTime?  @map("status_changed_at")
+  createdAt              DateTime   @default(now()) @map("created_at")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  item  Item  @relation(fields: [itemId], references: [id])
+  billLines BillLine[]
+
+  @@index([orderId])
+  @@index([status])
+  @@map("order_items")
+}
+
+// ==================== BILLING ====================
+
+model Bill {
+  id                 String     @id @default(cuid())
+  cafeId             String     @map("cafe_id")
+  sessionId          String     @map("session_id")
+  businessDayId      String?    @map("business_day_id")
+  tableId            String     @map("table_id")
+  subtotalPaise      Int        @map("subtotal_paise")
+  taxPaise           Int        @default(0) @map("tax_paise")
+  serviceChargePaise Int        @default(0) @map("service_charge_paise")
+  discountPaise      Int        @default(0) @map("discount_paise")
+  totalPaise         Int        @map("total_paise")
+  couponId           String?    @map("coupon_id")
+  notes              String?    @db.Text
+  status             BillStatus @default(draft)
+  issuedAt           DateTime?  @map("issued_at")
+  settledAt          DateTime?  @map("settled_at")
+  settledBy          String?    @map("settled_by")
+  createdAt          DateTime   @default(now()) @map("created_at")
+  updatedAt          DateTime   @updatedAt @map("updated_at")
+
+  cafe        Cafe         @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  session     TableSession @relation(fields: [sessionId], references: [id])
+  businessDay BusinessDay? @relation(fields: [businessDayId], references: [id])
+  lines       BillLine[]
+  payments    CustPayment[]
+
+  @@index([cafeId, status])
+  @@index([sessionId])
+  @@map("bills")
+}
+
+model BillLine {
+  id             String @id @default(cuid())
+  billId         String @map("bill_id")
+  orderItemId    String @map("order_item_id")
+  description    String @db.VarChar(500)
+  quantity       Int
+  unitPricePaise Int    @map("unit_price_paise")
+  totalPaise     Int    @map("total_paise")
+
+  bill      Bill      @relation(fields: [billId], references: [id], onDelete: Cascade)
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+
+  @@map("bill_lines")
+}
+
+model CustPayment {
+  id                String            @id @default(cuid())
+  billId            String            @map("bill_id")
+  cafeId            String            @map("cafe_id")
+  mode              CustPaymentMode
+  amountPaise       Int               @map("amount_paise")
+  cashReceivedPaise Int?              @map("cash_received_paise")
+  changeReturnedPaise Int?            @map("change_returned_paise")
+  gatewayRef        String?           @map("gateway_ref") @db.VarChar(255)
+  gatewayOrderId    String?           @map("gateway_order_id") @db.VarChar(255)
+  gatewaySignature  String?           @map("gateway_signature") @db.VarChar(255)
+  idempotencyKey    String            @unique @map("idempotency_key") @db.VarChar(255)
+  status            CustPaymentStatus @default(pending)
+  createdAt         DateTime          @default(now()) @map("created_at")
+
+  bill    Bill     @relation(fields: [billId], references: [id])
+  cafe    Cafe     @relation(fields: [cafeId], references: [id])
+  refunds Refund[]
+
+  @@index([cafeId, createdAt])
+  @@map("customer_payments")
+}
+
+model Refund {
+  id                    String       @id @default(cuid())
+  paymentId             String       @map("payment_id")
+  cafeId                String       @map("cafe_id")
+  amountPaise           Int          @map("amount_paise")
+  reason                String       @db.Text
+  approvedBy            String?      @map("approved_by")
+  requiresOwnerApproval Boolean      @default(true) @map("requires_owner_approval")
+  ownerApproved         Boolean?     @map("owner_approved")
+  gatewayRefundId       String?      @map("gateway_refund_id") @db.VarChar(255)
+  status                RefundStatus @default(pending_approval)
+  createdAt             DateTime     @default(now()) @map("created_at")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
+
+  payment CustPayment @relation(fields: [paymentId], references: [id])
+  cafe    Cafe        @relation(fields: [cafeId], references: [id])
+
+  @@index([cafeId])
+  @@map("refunds")
+}
+
+// ==================== SUBSCRIPTIONS ====================
+
+model Subscription {
+  id               String             @id @default(cuid())
+  cafeId           String             @map("cafe_id")
+  planId           String             @map("plan_id")
+  status           SubscriptionStatus @default(trial)
+  startsAt         DateTime           @map("starts_at")
+  expiresAt        DateTime           @map("expires_at")
+  graceDays        Int                @default(3) @map("grace_days")
+  customPricePaise Int?               @map("custom_price_paise")
+  trialEndsAt      DateTime?          @map("trial_ends_at")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+
+  cafe     Cafe                  @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  plan     Plan                  @relation(fields: [planId], references: [id])
+  payments SubscriptionPayment[]
+
+  @@index([cafeId])
+  @@index([status, expiresAt])
+  @@map("subscriptions")
+}
+
+model SubscriptionPayment {
+  id              String           @id @default(cuid())
+  subscriptionId  String           @map("subscription_id")
+  cafeId          String           @map("cafe_id")
+  amountPaise     Int              @map("amount_paise")
+  mode            SubPaymentMode
+  gatewayRef      String?          @map("gateway_ref") @db.VarChar(255)
+  gatewayOrderId  String?          @map("gateway_order_id") @db.VarChar(255)
+  gatewaySignature String?         @map("gateway_signature") @db.VarChar(255)
+  invoiceNumber   String?          @map("invoice_number") @db.VarChar(50)
+  invoiceUrl      String?          @map("invoice_url") @db.VarChar(500)
+  notes           String?          @db.Text
+  paidAt          DateTime?        @map("paid_at")
+  recordedBy      String?          @map("recorded_by")
+  couponId        String?          @map("coupon_id")
+  status          SubPaymentStatus @default(pending)
+  createdAt       DateTime         @default(now()) @map("created_at")
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+  coupon       Coupon?      @relation(fields: [couponId], references: [id])
+
+  @@index([cafeId, paidAt])
+  @@map("subscription_payments")
+}
+
+// ==================== OFFERS ====================
+
+model Offer {
+  id                   String       @id @default(cuid())
+  cafeId               String       @map("cafe_id")
+  title                String       @db.VarChar(255)
+  description          String?      @db.Text
+  imageUrl             String?      @map("image_url") @db.VarChar(500)
+  discountType         DiscountType @map("discount_type")
+  discountValue        Int          @map("discount_value")
+  applicableItems      Json?        @map("applicable_items") // Item IDs
+  applicableCategories Json?        @map("applicable_categories") // Category IDs
+  minOrderPaise        Int          @default(0) @map("min_order_paise")
+  validFrom            DateTime     @map("valid_from")
+  validUntil           DateTime?    @map("valid_until")
+  isActive             Boolean      @default(true) @map("is_active")
+  isPromotion          Boolean      @default(false) @map("is_promotion") // For promo slider
+  createdAt            DateTime     @default(now()) @map("created_at")
+  updatedAt            DateTime     @updatedAt @map("updated_at")
+
+  cafe Cafe @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+
+  @@index([cafeId, isActive])
+  @@map("offers")
+}
+
+// ==================== WAITER CALLS ====================
+
+model WaiterCall {
+  id             String           @id @default(cuid())
+  cafeId         String           @map("cafe_id")
+  sessionId      String           @map("session_id")
+  tableId        String           @map("table_id")
+  type           WaiterCallType
+  message        String?          @db.Text
+  status         WaiterCallStatus @default(active)
+  createdById    String           @map("created_by_id") // SessionMember id
+  acknowledgedBy String?          @map("acknowledged_by")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  resolvedAt     DateTime?        @map("resolved_at")
+
+  cafe    Cafe         @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  session TableSession @relation(fields: [sessionId], references: [id])
+  table   Table        @relation(fields: [tableId], references: [id])
+
+  @@index([cafeId, status])
+  @@map("waiter_calls")
+}
+
+// ==================== SUPPORT ====================
+
+model SupportTicket {
+  id        String         @id @default(cuid())
+  cafeId    String?        @map("cafe_id")
+  userId    String         @map("user_id")
+  subject   String         @db.VarChar(500)
+  message   String         @db.Text
+  status    TicketStatus   @default(open)
+  priority  TicketPriority @default(medium)
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  cafe Cafe? @relation(fields: [cafeId], references: [id])
+
+  @@index([cafeId])
+  @@index([status])
+  @@map("support_tickets")
+}
+
+// ==================== AUDIT LOG ====================
+
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  cafeId     String?  @map("cafe_id")
+  userId     String?  @map("user_id")
+  action     String   @db.VarChar(100) // e.g. "order.approved", "subscription.edited"
+  entityType String   @map("entity_type") @db.VarChar(50) // e.g. "order", "subscription"
+  entityId   String   @map("entity_id") @db.VarChar(50)
+  oldValue   Json?    @map("old_value")
+  newValue   Json?    @map("new_value")
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  userAgent  String?  @map("user_agent") @db.VarChar(500)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  cafe Cafe? @relation(fields: [cafeId], references: [id])
+
+  @@index([cafeId, createdAt])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@map("audit_log")
+}
+
+// ==================== OTP ====================
+
+model OtpRequest {
+  id        String     @id @default(cuid())
+  phone     String     @db.VarChar(20)
+  otpHash   String     @map("otp_hash") @db.VarChar(255)
+  purpose   OtpPurpose
+  attempts  Int        @default(0)
+  expiresAt DateTime   @map("expires_at")
+  verified  Boolean    @default(false)
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  @@index([phone, purpose, verified])
+  @@map("otp_requests")
+}
+
+// ==================== REALTIME EVENTS (Polling) ====================
+
+model RealtimeEvent {
+  id        BigInt   @id @default(autoincrement())
+  channel   String   @db.VarChar(255)
+  eventType String   @map("event_type") @db.VarChar(100)
+  payload   Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([channel, id])
+  @@index([createdAt]) // For cleanup cron
+  @@map("realtime_events")
+}
+
