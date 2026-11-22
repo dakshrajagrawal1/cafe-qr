@@ -3,23 +3,21 @@
 :root {
   --primary: #ff6b35;
   --primary-hover: #f05a24;
-  --primary-light: #fff2ec;
+  --primary-light: #fff3ec;
   --primary-gradient: linear-gradient(135deg, #ff7e47 0%, #ff5722 100%);
-  --dark: #131926;
+  --dark: #121826;
   --dark-surface: #1e2638;
   --bg: #f8fafc;
   --card-bg: #ffffff;
   --text-primary: #1e293b;
   --text-muted: #64748b;
   --border: #f1f5f9;
-  --border-light: #f3f4f6;
-  --border-hover: #e2e8f0;
+  --border-subtle: #e2e8f0;
   --veg: #16a34a;
   --non-veg: #dc2626;
   --bestseller: #f59e0b;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.06);
   --shadow-orange: 0 6px 20px rgba(255, 107, 53, 0.35);
   --radius-full: 9999px;
   --radius: 18px;
@@ -34,25 +32,83 @@
 }
 
 body {
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: #f1f5f9;
   color: var(--text-primary);
   line-height: 1.5;
   min-height: 100vh;
   display: flex;
   justify-content: center;
+  align-items: flex-start;
+  padding: 0;
 }
 
+@media (min-width: 640px) {
+  body {
+    padding: 24px 0;
+    background: radial-gradient(circle at 50% 10%, #fed7aa 0%, #f1f5f9 60%);
+  }
+}
+
+/* Device Shell */
 #root {
   width: 100%;
-  max-width: 440px;
+  max-width: 412px;
   min-height: 100vh;
   background: #ffffff;
   position: relative;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 0 50px rgba(0, 0, 0, 0.08);
   overflow-x: hidden;
+}
+
+@media (min-width: 640px) {
+  #root {
+    min-height: 844px;
+    height: auto;
+    border-radius: 44px;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.2), 0 0 0 10px #1e293b;
+    margin: auto;
+  }
+}
+
+/* iOS Top Status Bar */
+.ios-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+  position: relative;
+  z-index: 50;
+  user-select: none;
+}
+
+.ios-status-bar.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  color: #ffffff;
+}
+
+.ios-status-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+/* iOS Bottom Home Bar */
+.ios-home-bar {
+  width: 134px;
+  height: 5px;
+  background-color: #0f172a;
+  border-radius: 10px;
+  margin: 14px auto 10px;
+  opacity: 0.8;
 }
 
 button {
@@ -69,9 +125,9 @@ button:active {
 
 input, textarea {
   font-family: inherit;
-  border: 1px solid var(--border-hover);
+  border: 1.5px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  padding: 14px 16px;
+  padding: 13px 16px;
   font-size: 15px;
   outline: none;
   width: 100%;
@@ -87,10 +143,10 @@ input:focus, textarea:focus {
 /* Primary Button */
 .btn-primary {
   width: 100%;
-  padding: 16px 20px;
+  padding: 15px 22px;
   background: var(--primary);
   color: #ffffff;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   border-radius: var(--radius-full);
   display: flex;
@@ -103,7 +159,7 @@ input:focus, textarea:focus {
 
 .btn-primary:hover {
   background: var(--primary-hover);
-  box-shadow: 0 8px 25px rgba(255, 107, 53, 0.45);
+  box-shadow: 0 8px 24px rgba(255, 107, 53, 0.45);
 }
 
 .btn-primary:disabled {
@@ -115,13 +171,13 @@ input:focus, textarea:focus {
 /* Secondary Button */
 .btn-secondary {
   width: 100%;
-  padding: 15px 20px;
+  padding: 14px 22px;
   background: #ffffff;
   color: var(--dark);
   font-size: 15px;
   font-weight: 700;
   border-radius: var(--radius-full);
-  border: 1.5px solid var(--border-hover);
+  border: 1.5px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -169,23 +225,9 @@ input:focus, textarea:focus {
   content: '';
   width: 0;
   height: 0;
-  border-left: 4.5px solid transparent;
-  border-right: 4.5px solid transparent;
-  border-bottom: 8px solid var(--non-veg);
-}
-
-/* Bestseller Badge */
-.badge-bestseller {
-  background: #fffbeb;
-  color: #b45309;
-  border: 1px solid #fef3c7;
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-  font-size: 11px;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 7px solid var(--non-veg);
 }
 
 /* Stepper Pill */
@@ -193,7 +235,7 @@ input:focus, textarea:focus {
   display: inline-flex;
   align-items: center;
   background: #f8fafc;
-  border: 1px solid var(--border-hover);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-full);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
@@ -223,19 +265,19 @@ input:focus, textarea:focus {
 /* Floating Bottom Cart Bar */
 .floating-cart-bar {
   position: fixed;
-  bottom: 20px;
+  bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
   width: calc(100% - 32px);
-  max-width: 408px;
-  background: #131926;
+  max-width: 380px;
+  background: #121826;
   color: #ffffff;
-  padding: 10px 12px 10px 18px;
+  padding: 8px 10px 8px 16px;
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 10px 30px rgba(19, 25, 38, 0.4);
+  box-shadow: 0 10px 30px rgba(18, 24, 38, 0.45);
   z-index: 50;
   backdrop-filter: blur(10px);
 }
@@ -247,16 +289,16 @@ input:focus, textarea:focus {
 }
 
 .fade-in {
-  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Pulse animation for shield / rings */
-@keyframes ringPulse {
-  0% { transform: scale(0.95); opacity: 0.6; }
-  50% { transform: scale(1.08); opacity: 1; }
-  100% { transform: scale(0.95); opacity: 0.6; }
+/* Glowing Pulse for Shield */
+@keyframes glowPulse {
+  0% { transform: scale(0.96); box-shadow: 0 0 0 0 rgba(255, 107, 53, 0.3); }
+  70% { transform: scale(1.02); box-shadow: 0 0 0 18px rgba(255, 107, 53, 0); }
+  100% { transform: scale(0.96); box-shadow: 0 0 0 0 rgba(255, 107, 53, 0); }
 }
 
-.ring-pulse {
-  animation: ringPulse 2.5s infinite ease-in-out;
+.shield-pulse {
+  animation: glowPulse 2.5s infinite ease-in-out;
 }

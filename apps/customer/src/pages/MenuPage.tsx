@@ -3,6 +3,7 @@ import { useCustomerStore } from '../stores/customerStore.js';
 import { ItemDetailModal } from '../components/ItemDetailModal.js';
 import { CallWaiterModal } from '../components/CallWaiterModal.js';
 import { api } from '../services/api.js';
+import { IosStatusBar, IosHomeBar } from '../components/IosChrome.js';
 
 interface MenuPageProps {
   onOpenCart: () => void;
@@ -92,11 +93,11 @@ export const MenuPage: React.FC<MenuPageProps> = ({ onOpenCart, onOpenOrders }) 
   };
 
   return (
-    <div style={{ paddingBottom: 110, background: '#ffffff', minHeight: '100vh' }}>
+    <div style={{ paddingBottom: 110, background: '#ffffff', minHeight: '100%' }}>
       {/* SCREEN 5: TOP HEADER */}
       <header
         style={{
-          padding: '14px 20px',
+          padding: '0 20px 14px',
           background: '#ffffff',
           position: 'sticky',
           top: 0,
@@ -104,6 +105,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({ onOpenCart, onOpenOrders }) 
           borderBottom: '1px solid #f1f5f9',
         }}
       >
+        <IosStatusBar />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {/* Cafe Avatar & Table Info */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

@@ -26,6 +26,11 @@ router.post('/cafes/:id/suspend', adminCtrl.suspendCafe);
 router.post('/cafes/:id/reactivate', adminCtrl.reactivateCafe);
 router.post('/cafes/:id/impersonate', adminCtrl.impersonate);
 
+// Fixed Table QR Generation & Management
+router.get('/cafes/:id/tables', adminCtrl.getCafeTables);
+router.post('/cafes/:id/tables/generate-qr', adminCtrl.generateCafeTableQR);
+router.post('/cafes/:id/tables/bulk-generate-qr', adminCtrl.bulkGenerateCafeTableQRs);
+
 // Subscriptions & Payments
 router.post(
   '/subscriptions/:subscriptionId/extend',

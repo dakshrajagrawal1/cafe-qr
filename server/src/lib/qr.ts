@@ -11,6 +11,7 @@ interface QROptions {
   cafeId: string;
   tableId: string;
   width?: number;
+  baseUrl?: string;
 }
 
 /**
@@ -23,7 +24,8 @@ export async function generateTableQR(options: QROptions): Promise<string> {
     tableId: options.tableId,
   });
 
-  const url = `${env.API_BASE_URL}/c/${options.cafeSlug}?t=${token}`;
+  const baseUrl = options.baseUrl || env.CUSTOMER_APP_URL || env.API_BASE_URL;
+  const url = `${baseUrl}/c/${options.cafeSlug}?t=${token}`;
 
   const dataUrl = await QRCode.toDataURL(url, {
     width: options.width ?? 400,
@@ -47,7 +49,8 @@ export async function generateTableQRSvg(options: QROptions): Promise<string> {
     tableId: options.tableId,
   });
 
-  const url = `${env.API_BASE_URL}/c/${options.cafeSlug}?t=${token}`;
+  const baseUrl = options.baseUrl || env.CUSTOMER_APP_URL || env.API_BASE_URL;
+  const url = `${baseUrl}/c/${options.cafeSlug}?t=${token}`;
 
   return QRCode.toString(url, {
     type: 'svg',

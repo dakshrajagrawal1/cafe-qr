@@ -15,7 +15,8 @@ export type StaffTab =
   | 'cafes'
   | 'users'
   | 'subscriptions'
-  | 'audit';
+  | 'audit'
+  | 'downloads';
 
 interface SidebarProps {
   currentTab: StaffTab;
@@ -119,6 +120,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <span style={{ fontSize: 17 }}>📊</span>
             <span>Dashboard</span>
+          </button>
+
+          {/* Universal Download Apps Hub */}
+          <button onClick={() => onSelectTab('downloads')} style={navItemStyle('downloads')}>
+            <span style={{ fontSize: 17 }}>📲</span>
+            <span>Download Apps</span>
           </button>
 
           {/* SUPER ADMIN SPECIFIC TABS */}

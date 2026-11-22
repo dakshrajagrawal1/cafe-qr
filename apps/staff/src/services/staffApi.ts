@@ -210,4 +210,35 @@ export const staffApi = {
     request<any>(`/offers/${offerId}`, {
       method: 'DELETE',
     }),
+
+  // Admin / Platform Owner Fixed QR & Cafe Management
+  getPlatformCafes: (params?: { page?: number; limit?: number; search?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.page) q.append('page', String(params.page));
+    if (params?.limit) q.append('limit', String(params.limit));
+    if (params?.search) q.append('search', params.search);
+    return request<any>(`/admin/cafes?${q.toString()}`);
+  },
+
+  getCafeDetail: (cafeId: string) => request<any>(`/admin/cafes/${cafeId}`),
+
+  getCafeTablesWithQR: (cafeId: string) => request<any>(`/admin/cafes/${cafeId}/tables`),
+
+  generateCafeTableQR: (
+    cafeId: string,
+    data: { tableNumber: string; label?: string; capacity?: number },
+  ) =>
+    request<any>(`/admin/cafes/${cafeId}/tables/generate-qr`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  bulkGenerateCafeTableQRs: (
+    cafeId: string,
+    data: { prefix?: string; startNumber: number; endNumber: number; capacity?: number },
+  ) =>
+    request<any>(`/admin/cafes/${cafeId}/tables/bulk-generate-qr`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 };

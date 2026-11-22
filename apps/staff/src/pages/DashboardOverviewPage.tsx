@@ -160,7 +160,20 @@ export const DashboardOverviewPage: React.FC<DashboardOverviewProps> = ({ onNavi
                 { rank: 2, name: 'Brew & Bite', rev: '₹3.9L', img: '☕' },
                 { rank: 3, name: 'Cafe Delight', rev: '₹3.2L', img: '🍔' },
               ].map((c) => (
-                <div key={c.rank} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: '#f8fafc', borderRadius: 12 }}>
+                <div
+                  key={c.rank}
+                  onClick={() => onNavigateTab('cafes')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '10px 12px',
+                    background: '#f8fafc',
+                    borderRadius: 12,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ fontSize: 13, fontWeight: 800, color: '#64748b', width: 14 }}>{c.rank}</span>
                     <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#ffedd5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
@@ -168,7 +181,10 @@ export const DashboardOverviewPage: React.FC<DashboardOverviewProps> = ({ onNavi
                     </div>
                     <span style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>{c.name}</span>
                   </div>
-                  <span style={{ fontSize: 14, fontWeight: 800, color: '#16a34a' }}>{c.rev}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: '#16a34a' }}>{c.rev}</span>
+                    <span style={{ fontSize: 12, color: '#ff6b35' }}>➔</span>
+                  </div>
                 </div>
               ))}
             </div>

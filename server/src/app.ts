@@ -50,6 +50,13 @@ export function createApp() {
   const imagesPath = path.resolve(env.UPLOAD_DIR, 'images');
   app.use('/uploads/images', express.static(imagesPath));
 
+  // Customer direct QR scan redirect
+  app.get('/c/:slug', (req, res) => {
+    const customerBase = env.CUSTOMER_APP_URL || 'http://localhost:5173';
+    const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+    res.redirect(`${customerBase}/c/${req.params.slug}${query}`);
+  });
+
   // Health check
   app.get('/api/health', (_req, res) => {
     res.json({

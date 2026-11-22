@@ -72,10 +72,74 @@ export const LoginPage: React.FC = () => {
           </button>
         </form>
 
-        <div style={{ marginTop: 24, padding: 12, background: '#f8fafc', borderRadius: 8, fontSize: 12, color: '#64748b', textAlign: 'center' }}>
-          💡 <strong>Demo Credentials:</strong><br />
-          Owner: <code>vikram@chaibites.com</code> / <code>Owner@12345</code><br />
-          Manager: <code>manager@chaibites.com</code> / <code>Manager@12345</code>
+        <div style={{ marginTop: 20, padding: 14, background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12, color: '#64748b' }}>
+          <div style={{ fontWeight: 800, color: '#0f172a', marginBottom: 8, textAlign: 'center' }}>
+            ⚡ One-Click Quick Fill Logins:
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('admin@cafeqr.com');
+                setPassword('Admin@12345');
+              }}
+              style={{
+                padding: '6px 10px',
+                borderRadius: 6,
+                border: '1px solid #cbd5e1',
+                background: '#ffffff',
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#0f172a',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              🛡️ <strong>Platform Owner:</strong> admin@cafeqr.com
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('manager@chaibites.com');
+                setPassword('Manager@12345');
+              }}
+              style={{
+                padding: '6px 10px',
+                borderRadius: 6,
+                border: '1px solid #cbd5e1',
+                background: '#ffffff',
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#0f172a',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              👨‍🍳 <strong>Cafe Staff / Manager:</strong> manager@chaibites.com
+            </button>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 16, textAlign: 'center' }}>
+          <a
+            href="?tab=downloads"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 13,
+              fontWeight: 700,
+              color: '#ea580c',
+              textDecoration: 'none',
+              padding: '8px 14px',
+              borderRadius: 20,
+              background: '#fff7ed',
+              border: '1px solid #fed7aa',
+            }}
+          >
+            <span>📲</span>
+            <span>Download Android APK & iOS Apps ➔</span>
+          </a>
         </div>
       </div>
     </div>

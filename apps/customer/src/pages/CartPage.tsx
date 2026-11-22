@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { api } from '../services/api.js';
 import { useCustomerStore } from '../stores/customerStore.js';
+import { IosStatusBar, IosHomeBar } from '../components/IosChrome.js';
 
 interface CartPageProps {
   onBack: () => void;
@@ -74,37 +75,37 @@ export const CartPage: React.FC<CartPageProps> = ({ onBack, onOrderPlaced }) => 
   const defaultPizzaImg = 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=300&q=80';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#ffffff', justifyContent: 'space-between', paddingBottom: 24 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: '#ffffff', justifyContent: 'space-between', paddingBottom: 16 }}>
       <div>
         {/* SCREEN 6: TOP HEADER */}
         <header
           style={{
-            padding: '16px 20px',
+            padding: '0 20px 14px',
             borderBottom: '1px solid #f1f5f9',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 14,
             background: '#ffffff',
           }}
         >
-          <button
-            onClick={onBack}
-            style={{
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              fontSize: 16,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--dark)',
-            }}
-          >
-            ✕
-          </button>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--dark)' }}>Your Cart</h2>
+          <IosStatusBar />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <button
+              onClick={onBack}
+              style={{
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                fontSize: 16,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--dark)',
+              }}
+            >
+              ✕
+            </button>
+            <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--dark)' }}>Your Cart</h2>
+          </div>
         </header>
 
         <main style={{ padding: '20px' }}>
@@ -333,6 +334,10 @@ export const CartPage: React.FC<CartPageProps> = ({ onBack, onOrderPlaced }) => 
           </div>
         </div>
       )}
+
+      <div>
+        <IosHomeBar />
+      </div>
     </div>
   );
 };

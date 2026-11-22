@@ -7,6 +7,7 @@ import { MenuPage } from './pages/MenuPage.js';
 import { CartPage } from './pages/CartPage.js';
 import { OrderStatusPage } from './pages/OrderStatusPage.js';
 import { useCartPolling } from './hooks/useCartPolling.js';
+import { IosStatusBar, IosHomeBar } from './components/IosChrome.js';
 
 export const App: React.FC = () => {
   const {
@@ -102,42 +103,70 @@ export const App: React.FC = () => {
       )}
 
       {currentView === 'pin' && (
-        <div style={{ padding: '40px 24px 32px', textAlign: 'center', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: '#ffffff' }}>
+        <div style={{ padding: '0 24px 12px', textAlign: 'center', minHeight: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: '#ffffff' }}>
           <div>
-            {/* Friendly Friends Dining Illustration */}
-            <div style={{ margin: '20px auto 28px', maxWidth: 280 }}>
+            <IosStatusBar />
+
+            {/* Friends Dining Illustration with Green Checkmark Bubble */}
+            <div style={{ margin: '14px auto 20px', maxWidth: 220 }}>
               <div
                 style={{
-                  height: 160,
+                  height: 140,
                   borderRadius: 20,
                   background: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)',
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: 64,
-                  boxShadow: 'var(--shadow-sm)',
+                  position: 'relative',
+                  boxShadow: '0 4px 12px rgba(255, 107, 53, 0.08)',
                 }}
               >
-                👥🍕
+                {/* Green check speech bubble */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 14,
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    background: '#22c55e',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 14,
+                    fontWeight: 800,
+                    boxShadow: '0 2px 6px rgba(34, 197, 94, 0.4)',
+                  }}
+                >
+                  ✓
+                </div>
+                <div style={{ fontSize: 44, marginTop: 18 }}>
+                  👨‍💼👩‍💼👨‍🦱
+                </div>
+                <div style={{ fontSize: 20, marginTop: -6 }}>
+                  🍽️
+                </div>
               </div>
             </div>
 
             {/* Title & Host info */}
-            <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--dark)' }}>
+            <h2 style={{ fontSize: 21, fontWeight: 800, color: 'var(--dark)' }}>
               Rohan has already opened Table 04
             </h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 8, marginBottom: 28, lineHeight: 1.5 }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 6, marginBottom: 24, lineHeight: 1.5 }}>
               Enter the 4–6 digit Table PIN shown on your friend's screen
             </p>
 
             {pinError && (
-              <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#b91c1c', padding: '10px 14px', borderRadius: 10, fontSize: 14, marginBottom: 20 }}>
+              <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#b91c1c', padding: '10px 14px', borderRadius: 10, fontSize: 13, marginBottom: 18 }}>
                 {pinError}
               </div>
             )}
 
             {/* 4 Separate PIN Input Boxes */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 28 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 24 }}>
               {[0, 1, 2, 3].map((idx) => {
                 const char = pinInput[idx] || '';
                 return (
@@ -166,13 +195,13 @@ export const App: React.FC = () => {
                       }
                     }}
                     style={{
-                      width: 54,
-                      height: 60,
+                      width: 50,
+                      height: 56,
                       textAlign: 'center',
                       fontSize: 24,
                       fontWeight: 800,
                       borderRadius: 14,
-                      border: `2px solid ${char ? '#ff6b35' : '#e2e8f0'}`,
+                      border: `1.5px solid ${char ? '#ff6b35' : '#e2e8f0'}`,
                       background: char ? '#fffaf8' : '#ffffff',
                       boxShadow: char ? '0 4px 12px rgba(255, 107, 53, 0.15)' : 'var(--shadow-sm)',
                     }}
@@ -187,13 +216,13 @@ export const App: React.FC = () => {
               onClick={() => startSessionFlow(pinInput)}
               disabled={initializing || pinInput.length < 4}
               className="btn-primary"
-              style={{ marginBottom: 16 }}
+              style={{ marginBottom: 14 }}
             >
               {initializing ? 'Connecting...' : 'Join Table Cart'}
             </button>
 
             {/* Divider */}
-            <div style={{ display: 'flex', alignItems: 'center', margin: '14px 0', color: '#94a3b8', fontSize: 13 }}>
+            <div style={{ display: 'flex', alignItems: 'center', margin: '10px 0', color: '#94a3b8', fontSize: 13 }}>
               <div style={{ flex: 1, height: 1, background: '#f1f5f9' }} />
               <span style={{ padding: '0 12px' }}>or</span>
               <div style={{ flex: 1, height: 1, background: '#f1f5f9' }} />
@@ -207,15 +236,15 @@ export const App: React.FC = () => {
                 color: '#ff6b35',
                 fontSize: 14,
                 fontWeight: 700,
-                padding: '8px 16px',
+                padding: '6px 14px',
               }}
             >
               Start Independent Cart
             </button>
           </div>
 
-          <div style={{ fontSize: 12, color: '#94a3b8' }}>
-            TableQR • Collaborative Dining
+          <div>
+            <IosHomeBar />
           </div>
         </div>
       )}

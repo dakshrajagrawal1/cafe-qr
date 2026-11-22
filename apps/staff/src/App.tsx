@@ -10,6 +10,8 @@ import { WaiterScreenPage } from './pages/WaiterScreenPage.js';
 import { AnalyticsPage } from './pages/AnalyticsPage.js';
 import { OffersPage } from './pages/OffersPage.js';
 import { SettingsPage } from './pages/SettingsPage.js';
+import { PlatformCafesPage } from './pages/PlatformCafesPage.js';
+import { AppDownloadHubPage } from './pages/AppDownloadHubPage.js';
 import { BusinessDayModal } from './components/BusinessDayModal.js';
 
 export const App: React.FC = () => {
@@ -18,9 +20,21 @@ export const App: React.FC = () => {
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [showBusinessDayModal, setShowBusinessDayModal] = useState(false);
 
-  // Set default view by role
+  // Check URL parameters for direct app mode
   useEffect(() => {
-    if (user?.role === 'chef') {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    const modeParam = params.get('mode');
+
+    if (tabParam === 'downloads') {
+      setCurrentTab('downloads');
+    } else if (modeParam === 'kitchen') {
+      setCurrentTab('kitchen');
+    } else if (modeParam === 'waiter') {
+      setCurrentTab('waiter');
+    } else if (modeParam === 'admin') {
+      setCurrentTab('cafes');
+    } else if (user?.role === 'chef') {
       setCurrentTab('kitchen');
     } else if (user?.role === 'waiter') {
       setCurrentTab('waiter');
@@ -28,6 +42,18 @@ export const App: React.FC = () => {
       setCurrentTab('dashboard');
     }
   }, [user?.role]);
+
+  // Allow direct access to download hub even when logged out
+  const params = new URLSearchParams(window.location.search);
+  if (!user && params.get('tab') === 'downloads') {
+    return (
+      <AppDownloadHubPage
+        onClose={() => {
+          window.location.href = window.location.pathname;
+        }}
+      />
+    );
+  }
 
   if (!user) {
     return <LoginPage />;
@@ -55,8 +81,10 @@ export const App: React.FC = () => {
         {currentTab === 'waiter' && <WaiterScreenPage />}
         {currentTab === 'offers' && <OffersPage />}
         {currentTab === 'settings' && <SettingsPage />}
+        {currentTab === 'cafes' && <PlatformCafesPage />}
+        {currentTab === 'downloads' && <AppDownloadHubPage />}
         {/* Fallbacks for super admin directory tabs */}
-        {(currentTab === 'cafes' || currentTab === 'users' || currentTab === 'subscriptions' || currentTab === 'audit') && (
+        {(currentTab === 'users' || currentTab === 'subscriptions' || currentTab === 'audit') && (
           <DashboardOverviewPage onNavigateTab={setCurrentTab} />
         )}
       </main>

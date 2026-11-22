@@ -204,3 +204,49 @@ export async function getAuditLogs(req: Request, res: Response, next: NextFuncti
     next(error);
   }
 }
+
+// ---- Fixed Table QR Management ----
+
+export async function getCafeTables(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await adminService.getCafeTablesWithFixedQR(req.params.id as string);
+    res.json({ data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function generateCafeTableQR(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { tableNumber, label, capacity } = req.body;
+    const result = await adminService.generateFixedTableQR(
+      req.params.id as string,
+      { tableNumber, label, capacity },
+      req.user!.id,
+      req,
+    );
+    res.status(result.isExisting ? 200 : 201).json({ data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function bulkGenerateCafeTableQRs(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { prefix, startNumber, endNumber, capacity } = req.body;
+    const result = await adminService.bulkGenerateFixedTableQRs(
+      req.params.id as string,
+      {
+        prefix,
+        startNumber: Number(startNumber),
+        endNumber: Number(endNumber),
+        capacity: capacity ? Number(capacity) : undefined,
+      },
+      req.user!.id,
+      req,
+    );
+    res.status(201).json({ data: result });
+  } catch (error) {
+    next(error);
+  }
+}

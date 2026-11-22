@@ -3,6 +3,10 @@ import { NotFoundError, ValidationError, ForbiddenError } from '../../lib/errors
 import { logAudit } from '../../lib/audit.js';
 import { signAccessToken } from '../auth/token.service.js';
 import { parsePlanFeatures } from '../subscription/subscription.service.js';
+import { generateSecretSync } from '../../lib/id.js';
+import { signTableToken } from '../../lib/hmac.js';
+import { generateTableQR, generateTableQRSvg } from '../../lib/qr.js';
+import { env } from '../../config/env.js';
 import type { Request } from 'express';
 
 /**
@@ -436,4 +440,180 @@ export async function getAuditLogs(params: {
       totalPages: Math.ceil(total / limit),
     },
   };
+}
+
+/**
+ * Platform Owner: List all tables with permanent fixed QR details for a specific cafe.
+ */
+export async function getCafeTablesWithFixedQR(cafeId: string) {
+  const cafe = await prisma.cafe.findUnique({
+    where: { id: cafeId },
+    select: { id: true, name: true, slug: true, city: true, status: true, logoUrl: true },
+  });
+  if (!cafe) throw new NotFoundError('Cafe');
+
+  const tables = await prisma.table.findMany({
+    where: { cafeId, deletedAt: null },
+    orderBy: { sortOrder: 'asc' },
+  });
+
+  const customerBase = env.CUSTOMER_APP_URL || 'http://localhost:5173';
+
+  const enrichedTables = await Promise.all(
+    tables.map(async (table) => {
+      const token = signTableToken({ cafeId: cafe.id, tableId: table.id });
+      const qrUrl = `${customerBase}/c/${cafe.slug}?t=${token}`;
+      const qrDataUrl = await generateTableQR({
+        cafeSlug: cafe.slug,
+        cafeId: cafe.id,
+        tableId: table.id,
+        baseUrl: customerBase,
+      });
+      const qrSvg = await generateTableQRSvg({
+        cafeSlug: cafe.slug,
+        cafeId: cafe.id,
+        tableId: table.id,
+        baseUrl: customerBase,
+      });
+
+      return {
+        id: table.id,
+        tableNumber: table.tableNumber,
+        label: table.label,
+        capacity: table.capacity,
+        isActive: table.isActive,
+        createdAt: table.createdAt,
+        qrToken: token,
+        qrUrl,
+        qrDataUrl,
+        qrSvg,
+        isFixed: true,
+      };
+    }),
+  );
+
+  return {
+    cafe,
+    tables: enrichedTables,
+  };
+}
+
+/**
+ * Platform Owner: Generate or retrieve a fixed Table QR for a particular cafe and table number.
+ * If the table exists, it returns the existing permanently fixed QR code without changing anything.
+ * If it does not exist, it creates it and signs its permanent QR token.
+ */
+export async function generateFixedTableQR(
+  cafeId: string,
+  data: { tableNumber: string; label?: string; capacity?: number },
+  adminId: string,
+  req?: Request,
+) {
+  const cafe = await prisma.cafe.findUnique({
+    where: { id: cafeId },
+    select: { id: true, name: true, slug: true },
+  });
+  if (!cafe) throw new NotFoundError('Cafe');
+
+  const cleanTableNumber = data.tableNumber.trim();
+  if (!cleanTableNumber) throw new ValidationError('Table number is required');
+
+  // Check if table already exists for this cafe
+  let table = await prisma.table.findFirst({
+    where: { cafeId, tableNumber: cleanTableNumber, deletedAt: null },
+  });
+
+  let isExisting = false;
+
+  if (table) {
+    isExisting = true;
+  } else {
+    const qrSecret = generateSecretSync(32);
+    table = await prisma.table.create({
+      data: {
+        cafeId,
+        tableNumber: cleanTableNumber,
+        label: data.label?.trim() || null,
+        capacity: data.capacity ? Number(data.capacity) : 4,
+        qrSecret,
+      },
+    });
+
+    await logAudit({
+      userId: adminId,
+      cafeId,
+      action: 'table.fixed_qr_generated',
+      entityType: 'table',
+      entityId: table.id,
+      newValue: { tableNumber: cleanTableNumber, label: data.label, capacity: data.capacity },
+      req,
+    });
+  }
+
+  const customerBase = env.CUSTOMER_APP_URL || 'http://localhost:5173';
+  const token = signTableToken({ cafeId: cafe.id, tableId: table.id });
+  const qrUrl = `${customerBase}/c/${cafe.slug}?t=${token}`;
+
+  const qrDataUrl = await generateTableQR({
+    cafeSlug: cafe.slug,
+    cafeId: cafe.id,
+    tableId: table.id,
+    baseUrl: customerBase,
+  });
+
+  const qrSvg = await generateTableQRSvg({
+    cafeSlug: cafe.slug,
+    cafeId: cafe.id,
+    tableId: table.id,
+    baseUrl: customerBase,
+  });
+
+  return {
+    cafe,
+    table: {
+      id: table.id,
+      tableNumber: table.tableNumber,
+      label: table.label,
+      capacity: table.capacity,
+      isActive: table.isActive,
+      createdAt: table.createdAt,
+    },
+    qrToken: token,
+    qrUrl,
+    qrDataUrl,
+    qrSvg,
+    isExisting,
+    isFixed: true,
+    message: isExisting
+      ? `Table ${cleanTableNumber} already exists. Retrieved permanent fixed QR.`
+      : `Table ${cleanTableNumber} created and fixed permanent QR generated.`,
+  };
+}
+
+/**
+ * Platform Owner: Bulk generate fixed QRs for multiple tables for a cafe at once.
+ */
+export async function bulkGenerateFixedTableQRs(
+  cafeId: string,
+  data: { prefix?: string; startNumber: number; endNumber: number; capacity?: number },
+  adminId: string,
+  req?: Request,
+) {
+  const { startNumber, endNumber, prefix = 'Table ', capacity = 4 } = data;
+  if (!startNumber || !endNumber || startNumber > endNumber) {
+    throw new ValidationError('Valid startNumber and endNumber are required');
+  }
+
+  if (endNumber - startNumber > 100) {
+    throw new ValidationError('Cannot generate more than 100 tables in one batch');
+  }
+
+  const results = [];
+  for (let i = startNumber; i <= endNumber; i++) {
+    const tableNum = `${prefix}${i < 10 ? '0' + i : i}`.trim();
+    const res = await generateFixedTableQR(cafeId, { tableNumber: tableNum, capacity }, adminId, req);
+    results.push(res);
+  }
+
+  return results;
 }
