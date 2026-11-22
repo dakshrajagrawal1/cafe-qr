@@ -25,7 +25,7 @@ const APPS: AppInfo[] = [
     badgeColor: '#ff6b35',
     description: 'Designed for smartphone table scanning. Multi-guest shared cart, real-time bill, call waiter, and zero-waiting payment.',
     features: ['Contactless Table Ordering', 'Shared Table Cart with PIN', 'Call Waiter & Water alert', 'UPI & Split Payments'],
-    launchUrl: 'http://localhost:5173/c/chai-bites?t=eyJjYWZlSWQiOiJjYWZlLWRlbW8tMSIsInRhYmxlSWQiOiJjbXdzNjJzdGswMDAxZTF1d3Fhc240bDRzIn0.5viAPFCu0_r0vyAlcEmiy6JqILIFc4IstYM1Ne1Y4vg',
+    launchUrl: 'https://cafe-qr-pied.vercel.app/c/chai-bites?t=eyJjYWZlSWQiOiJjYWZlLWRlbW8tMSIsInRhYmxlSWQiOiJjbXdzNjJzdGswMDAxZTF1d3Fhc240bDRzIn0.5viAPFCu0_r0vyAlcEmiy6JqILIFc4IstYM1Ne1Y4vg',
     apkDownloadUrl: '#download-customer-apk',
   },
   {
@@ -38,7 +38,7 @@ const APPS: AppInfo[] = [
     badgeColor: '#8b5cf6',
     description: 'Complete operational and financial control over your cafe. Real-time revenue, gross margin, staff roles, and pricing.',
     features: ['Real-time Daily Revenue', 'Menu & Stock Pricing Control', 'Staff Management & Permissions', 'Business Day Close & Cash Audit'],
-    launchUrl: 'http://localhost:5174?mode=owner',
+    launchUrl: 'https://cafe-qr-tykv.vercel.app?mode=owner',
     apkDownloadUrl: '#download-owner-apk',
   },
   {
@@ -51,7 +51,7 @@ const APPS: AppInfo[] = [
     badgeColor: '#0ea5e9',
     description: 'Control front-of-house operations. Approve or reject incoming orders, settle tables, handle bill requests, and manage floor staff.',
     features: ['Live Order Approval & Reject', 'Live Table Grid & Session Colors', 'Bill Settlement & Cash Handling', 'Waiter Request Dispatch'],
-    launchUrl: 'http://localhost:5174?mode=manager',
+    launchUrl: 'https://cafe-qr-tykv.vercel.app?mode=manager',
     apkDownloadUrl: '#download-manager-apk',
   },
   {
@@ -64,7 +64,7 @@ const APPS: AppInfo[] = [
     badgeColor: '#10b981',
     description: 'Optimized for mobile floor staff. Get instant vibration alerts when a table needs water, assistance, or bill, and check off delivered dishes.',
     features: ['Instant Waiter Call Alerts', 'Dish Delivery Checklist', 'Table Re-Order from Floor', 'Table Status Sync'],
-    launchUrl: 'http://localhost:5174?mode=waiter',
+    launchUrl: 'https://cafe-qr-tykv.vercel.app?mode=waiter',
     apkDownloadUrl: '#download-waiter-apk',
   },
   {
@@ -77,7 +77,7 @@ const APPS: AppInfo[] = [
     badgeColor: '#f59e0b',
     description: 'Designed for kitchen tablets and wall displays. Color-coded order tickets, special preparation instructions, and instant status updates.',
     features: ['Live Ticket Queue with Sounds', 'Preparation Countdown Timers', 'Special Dish Instructions', 'Mark Ready & Undo Actions'],
-    launchUrl: 'http://localhost:5174?mode=kitchen',
+    launchUrl: 'https://cafe-qr-tykv.vercel.app?mode=kitchen',
     apkDownloadUrl: '#download-kitchen-apk',
   },
   {
@@ -90,7 +90,7 @@ const APPS: AppInfo[] = [
     badgeColor: '#ef4444',
     description: 'Platform master console. Oversee all onboarded cafes, monitor subscription MRR, and generate cryptographically signed fixed table QR codes.',
     features: ['Multi-Cafe Network Management', 'Fixed Table QR Generator (Permanent)', 'Subscription Billing & Plans', 'Platform Security & Audit Trail'],
-    launchUrl: 'http://localhost:5174?mode=admin',
+    launchUrl: 'https://cafe-qr-tykv.vercel.app?mode=admin',
     apkDownloadUrl: '#download-admin-apk',
   },
 ];

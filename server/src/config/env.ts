@@ -10,7 +10,7 @@ const envSchema = z.object({
   PORT: z.string().default('3000').transform(Number),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   API_BASE_URL: z.string().url().default('http://localhost:3000'),
-  CUSTOMER_APP_URL: z.string().default('http://localhost:5173'),
+  CUSTOMER_APP_URL: z.string().default('https://cafe-qr-pied.vercel.app'),
 
   // Database
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
