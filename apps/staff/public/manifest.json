@@ -1,16 +1,24 @@
 {
-  "name": "CafeQR Staff & Kitchen",
-  "short_name": "Cafe Staff",
-  "description": "Live Order Management, Kitchen Display & Waiter Screen",
+  "name": "CafeQR Staff & Operations",
+  "short_name": "CafeQR Staff",
+  "description": "Live Order Management, Kitchen Display System & Waiter Operations",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#1a1a2e",
-  "theme_color": "#1a1a2e",
+  "background_color": "#131926",
+  "theme_color": "#131926",
   "icons": [
     {
       "src": "/staff-icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/staff-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
