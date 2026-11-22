@@ -4,9 +4,8 @@ services:
     runtime: node
     plan: free
     region: singapore
-    rootDir: server
-    buildCommand: pnpm install && pnpm build
-    startCommand: node dist/index.js
+    buildCommand: pnpm install && pnpm --filter @cafe-qr/shared build && cd server && npx prisma generate && pnpm build
+    startCommand: cd server && node dist/index.js
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
@@ -24,6 +23,8 @@ services:
       - key: TABLE_TOKEN_SECRET
         generateValue: true
       - key: CORS_ORIGINS
-        sync: false # e.g. https://tableqr-customer.vercel.app,https://tableqr-staff.vercel.app
-      - key: API_BASE_URL
-        sync: false # e.g. https://cafe-qr-api.onrender.com
+        value: "*"
+      - key: SUPER_ADMIN_EMAIL
+        value: admin@cafeqr.com
+      - key: SUPER_ADMIN_PASSWORD
+        value: Admin@12345
