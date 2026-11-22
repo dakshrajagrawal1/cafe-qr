@@ -2,13 +2,20 @@ import React from 'react';
 import { useStaffStore } from '../stores/staffStore.js';
 
 export type StaffTab =
+  | 'dashboard'
   | 'orders'
   | 'tables'
   | 'kitchen'
   | 'waiter'
+  | 'staff'
+  | 'menu'
   | 'analytics'
   | 'offers'
-  | 'settings';
+  | 'settings'
+  | 'cafes'
+  | 'users'
+  | 'subscriptions'
+  | 'audit';
 
 interface SidebarProps {
   currentTab: StaffTab;
@@ -28,330 +35,270 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const isChef = role === 'chef';
   const isWaiter = role === 'waiter';
-  const isOwner = role === 'owner' || role === 'super_admin';
+  const isSuperAdmin = role === 'super_admin';
+
+  // Get user initials
+  const getInitials = (name?: string) => {
+    if (!name) return 'AS';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  };
+
+  const navItemStyle = (tab: StaffTab) => {
+    const isActive = currentTab === tab;
+    return {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      padding: '11px 16px',
+      borderRadius: 10,
+      background: isActive ? '#ff6b35' : 'transparent',
+      color: isActive ? '#ffffff' : '#94a3b8',
+      fontWeight: isActive ? 800 : 600,
+      fontSize: 14,
+      textAlign: 'left' as const,
+      border: 'none',
+      cursor: 'pointer',
+      transition: 'all 0.15s ease',
+    };
+  };
 
   return (
     <aside
       style={{
-        width: 250,
+        width: 240,
         height: '100vh',
-        background: 'var(--sidebar-bg)',
+        background: '#131926',
         color: '#ffffff',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        padding: '24px 16px',
-        borderRight: '1px solid rgba(255, 255, 255, 0.08)',
+        padding: '20px 14px',
+        borderRight: '1px solid #1e2638',
         flexShrink: 0,
+        zIndex: 50,
       }}
     >
       <div>
-        {/* Brand */}
+        {/* Brand: Chef Hat Icon + CafeQR */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 10,
-            padding: '0 8px 20px',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            padding: '4px 10px 22px',
           }}
         >
           <div
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 8,
-              background: 'var(--primary)',
+              width: 38,
+              height: 38,
+              borderRadius: 10,
+              background: 'transparent',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontWeight: 800,
-              fontSize: 18,
+              fontSize: 26,
             }}
           >
-            Q
+            👨‍🍳
           </div>
-          <div>
-            <h1 style={{ fontSize: 16, fontWeight: 800, lineHeight: 1.2, margin: 0 }}>
-              {user?.cafe?.name || 'Cafe Panel'}
-            </h1>
-            <span style={{ fontSize: 11, color: 'var(--sidebar-text)', textTransform: 'capitalize' }}>
-              {role} view
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span style={{ fontSize: 20, fontWeight: 800, color: '#ffffff', letterSpacing: -0.5 }}>Cafe</span>
+            <span style={{ fontSize: 20, fontWeight: 800, color: '#ff6b35', letterSpacing: -0.5 }}>QR</span>
           </div>
         </div>
 
-        {/* Business Day Button for Owner/Manager */}
-        {!isChef && !isWaiter && (
-          <div style={{ marginTop: 14 }}>
-            <button
-              onClick={onOpenBusinessDay}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '8px 12px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'rgba(255, 255, 255, 0.08)',
-                color: '#ffffff',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                fontWeight: 700,
-                fontSize: 12,
-                cursor: 'pointer',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span>🗓️</span>
-                <span>Business Day</span>
-              </div>
-              <span style={{ fontSize: 10, background: '#10b981', color: '#fff', padding: '1px 6px', borderRadius: 4 }}>
-                Active
-              </span>
-            </button>
-          </div>
-        )}
+        {/* Navigation Items */}
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
+          {/* 1. Dashboard (Universal) */}
+          <button
+            onClick={() => onSelectTab('dashboard')}
+            style={navItemStyle('dashboard')}
+          >
+            <span style={{ fontSize: 17 }}>📊</span>
+            <span>Dashboard</span>
+          </button>
 
-        {/* Navigation Items based on role */}
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 14 }}>
-          {/* Analytics (Owner only) */}
-          {isOwner && (
-            <button
-              onClick={() => onSelectTab('analytics')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '12px 14px',
-                borderRadius: 'var(--radius-sm)',
-                background: currentTab === 'analytics' ? 'var(--primary)' : 'transparent',
-                color: currentTab === 'analytics' ? '#ffffff' : 'var(--sidebar-text)',
-                fontWeight: 700,
-                fontSize: 14,
-                textAlign: 'left',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              <span style={{ fontSize: 18 }}>📈</span>
-              <span>Overview & Sales</span>
-            </button>
-          )}
-
-          {/* Orders (Manager & Owner) */}
-          {!isChef && !isWaiter && (
-            <button
-              onClick={() => onSelectTab('orders')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 14px',
-                borderRadius: 'var(--radius-sm)',
-                background: currentTab === 'orders' ? 'var(--primary)' : 'transparent',
-                color: currentTab === 'orders' ? '#ffffff' : 'var(--sidebar-text)',
-                fontWeight: 700,
-                fontSize: 14,
-                textAlign: 'left',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 18 }}>🛎️</span>
-                <span>Live Orders</span>
-              </div>
-              {pendingOrdersCount > 0 && (
-                <span
-                  style={{
-                    background: '#ef4444',
-                    color: '#fff',
-                    fontSize: 11,
-                    fontWeight: 800,
-                    padding: '2px 8px',
-                    borderRadius: 10,
-                  }}
-                >
-                  {pendingOrdersCount}
-                </span>
+          {/* SUPER ADMIN SPECIFIC TABS */}
+          {isSuperAdmin ? (
+            <>
+              <button onClick={() => onSelectTab('cafes')} style={navItemStyle('cafes')}>
+                <span style={{ fontSize: 17 }}>🏪</span>
+                <span>Cafes</span>
+              </button>
+              <button onClick={() => onSelectTab('users')} style={navItemStyle('users')}>
+                <span style={{ fontSize: 17 }}>👥</span>
+                <span>Users</span>
+              </button>
+              <button onClick={() => onSelectTab('subscriptions')} style={navItemStyle('subscriptions')}>
+                <span style={{ fontSize: 17 }}>💳</span>
+                <span>Subscriptions</span>
+              </button>
+              <button onClick={() => onSelectTab('analytics')} style={navItemStyle('analytics')}>
+                <span style={{ fontSize: 17 }}>📈</span>
+                <span>Analytics</span>
+              </button>
+              <button onClick={() => onSelectTab('audit')} style={navItemStyle('audit')}>
+                <span style={{ fontSize: 17 }}>📜</span>
+                <span>Audit Logs</span>
+              </button>
+              <button onClick={() => onSelectTab('settings')} style={navItemStyle('settings')}>
+                <span style={{ fontSize: 17 }}>⚙️</span>
+                <span>Settings</span>
+              </button>
+            </>
+          ) : (
+            /* CAFE STAFF / OWNER / MANAGER SPECIFIC TABS */
+            <>
+              {!isChef && !isWaiter && (
+                <button onClick={() => onSelectTab('orders')} style={navItemStyle('orders')}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span style={{ fontSize: 17 }}>🛎️</span>
+                      <span>Orders</span>
+                    </div>
+                    {pendingOrdersCount > 0 && (
+                      <span style={{ background: '#ef4444', color: '#fff', fontSize: 11, fontWeight: 800, padding: '2px 7px', borderRadius: 10 }}>
+                        {pendingOrdersCount}
+                      </span>
+                    )}
+                  </div>
+                </button>
               )}
-            </button>
-          )}
 
-          {/* Table Grid (Manager & Owner) */}
-          {!isChef && !isWaiter && (
-            <button
-              onClick={() => onSelectTab('tables')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '12px 14px',
-                borderRadius: 'var(--radius-sm)',
-                background: currentTab === 'tables' ? 'var(--primary)' : 'transparent',
-                color: currentTab === 'tables' ? '#ffffff' : 'var(--sidebar-text)',
-                fontWeight: 700,
-                fontSize: 14,
-                textAlign: 'left',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              <span style={{ fontSize: 18 }}>🪑</span>
-              <span>Live Table Grid</span>
-            </button>
-          )}
+              {!isChef && !isWaiter && (
+                <button onClick={() => onSelectTab('tables')} style={navItemStyle('tables')}>
+                  <span style={{ fontSize: 17 }}>🪑</span>
+                  <span>Tables</span>
+                </button>
+              )}
 
-          {/* Kitchen Display (Chef, Manager, Owner) */}
-          {!isWaiter && (
-            <button
-              onClick={() => onSelectTab('kitchen')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '12px 14px',
-                borderRadius: 'var(--radius-sm)',
-                background: currentTab === 'kitchen' ? 'var(--primary)' : 'transparent',
-                color: currentTab === 'kitchen' ? '#ffffff' : 'var(--sidebar-text)',
-                fontWeight: 700,
-                fontSize: 14,
-                textAlign: 'left',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              <span style={{ fontSize: 18 }}>🍳</span>
-              <span>Kitchen Screen</span>
-            </button>
-          )}
+              {!isWaiter && (
+                <button onClick={() => onSelectTab('kitchen')} style={navItemStyle('kitchen')}>
+                  <span style={{ fontSize: 17 }}>🍳</span>
+                  <span>Kitchen</span>
+                </button>
+              )}
 
-          {/* Waiter View (Waiter, Manager, Owner) */}
-          {!isChef && (
-            <button
-              onClick={() => onSelectTab('waiter')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '12px 14px',
-                borderRadius: 'var(--radius-sm)',
-                background: currentTab === 'waiter' ? 'var(--primary)' : 'transparent',
-                color: currentTab === 'waiter' ? '#ffffff' : 'var(--sidebar-text)',
-                fontWeight: 700,
-                fontSize: 14,
-                textAlign: 'left',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              <span style={{ fontSize: 18 }}>🤵</span>
-              <span>Waiter Screen</span>
-            </button>
-          )}
+              {!isChef && (
+                <button onClick={() => onSelectTab('waiter')} style={navItemStyle('waiter')}>
+                  <span style={{ fontSize: 17 }}>🤵</span>
+                  <span>Staff</span>
+                </button>
+              )}
 
-          {/* Offers (Manager & Owner) */}
-          {!isChef && !isWaiter && (
-            <button
-              onClick={() => onSelectTab('offers')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '12px 14px',
-                borderRadius: 'var(--radius-sm)',
-                background: currentTab === 'offers' ? 'var(--primary)' : 'transparent',
-                color: currentTab === 'offers' ? '#ffffff' : 'var(--sidebar-text)',
-                fontWeight: 700,
-                fontSize: 14,
-                textAlign: 'left',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              <span style={{ fontSize: 18 }}>🏷️</span>
-              <span>Offers & Promo</span>
-            </button>
-          )}
+              {!isChef && !isWaiter && (
+                <button onClick={() => onSelectTab('menu')} style={navItemStyle('menu')}>
+                  <span style={{ fontSize: 17 }}>📖</span>
+                  <span>Menu</span>
+                </button>
+              )}
 
-          {/* Settings (Owner only) */}
-          {isOwner && (
-            <button
-              onClick={() => onSelectTab('settings')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '12px 14px',
-                borderRadius: 'var(--radius-sm)',
-                background: currentTab === 'settings' ? 'var(--primary)' : 'transparent',
-                color: currentTab === 'settings' ? '#ffffff' : 'var(--sidebar-text)',
-                fontWeight: 700,
-                fontSize: 14,
-                textAlign: 'left',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              <span style={{ fontSize: 18 }}>⚙️</span>
-              <span>Settings</span>
-            </button>
+              {!isChef && !isWaiter && (
+                <button onClick={() => onSelectTab('analytics')} style={navItemStyle('analytics')}>
+                  <span style={{ fontSize: 17 }}>📈</span>
+                  <span>Analytics</span>
+                </button>
+              )}
+
+              {!isChef && !isWaiter && (
+                <button onClick={() => onSelectTab('settings')} style={navItemStyle('settings')}>
+                  <span style={{ fontSize: 17 }}>⚙️</span>
+                  <span>Settings</span>
+                </button>
+              )}
+            </>
           )}
         </nav>
       </div>
 
-      {/* Footer / Controls */}
-      <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: 16 }}>
-        <button
-          onClick={toggleSound}
+      {/* Footer Area: Business Day & User Profile */}
+      <div>
+        {/* Business Day Button for Owner/Manager */}
+        {!isChef && !isWaiter && !isSuperAdmin && (
+          <button
+            onClick={onOpenBusinessDay}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '8px 12px',
+              borderRadius: 10,
+              background: '#1e2638',
+              color: '#cbd5e1',
+              border: '1px solid #2d3748',
+              fontWeight: 700,
+              fontSize: 12,
+              cursor: 'pointer',
+              marginBottom: 12,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>🗓️</span>
+              <span>Business Day</span>
+            </div>
+            <span style={{ fontSize: 10, background: '#10b981', color: '#fff', padding: '1px 6px', borderRadius: 4 }}>
+              Active
+            </span>
+          </button>
+        )}
+
+        {/* User Profile Pill at Bottom */}
+        <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            width: '100%',
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: 'none',
-            padding: '10px 14px',
-            borderRadius: 'var(--radius-sm)',
-            color: '#ffffff',
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: 'pointer',
-            marginBottom: 10,
+            padding: '10px 12px',
+            background: '#1e2638',
+            borderRadius: 12,
+            border: '1px solid #2d3748',
           }}
         >
-          <span>{soundEnabled ? '🔔 Sound Alert' : '🔕 Muted'}</span>
-          <span
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: '50%',
+                background: '#ff6b35',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 800,
+                fontSize: 13,
+              }}
+            >
+              {getInitials(user?.name)}
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 110 }}>
+                {user?.name || (isSuperAdmin ? 'Super Admin' : 'Amit Sharma')}
+              </div>
+              <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'capitalize' }}>
+                {user?.role === 'super_admin' ? 'Super Admin' : user?.role || 'Manager'}
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={logout}
+            title="Log Out"
             style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: soundEnabled ? '#10b981' : '#ef4444',
+              background: 'transparent',
+              color: '#94a3b8',
+              fontSize: 14,
+              cursor: 'pointer',
+              padding: 4,
             }}
-          />
-        </button>
-
-        <div style={{ padding: '8px 14px', marginBottom: 10 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#ffffff' }}>{user?.name}</div>
-          <div style={{ fontSize: 11, color: 'var(--sidebar-text)' }}>{user?.email}</div>
+          >
+            ⏻
+          </button>
         </div>
-
-        <button
-          onClick={logout}
-          style={{
-            width: '100%',
-            background: 'rgba(239, 68, 68, 0.1)',
-            color: '#ef4444',
-            border: '1px solid rgba(239, 68, 68, 0.2)',
-            padding: '10px',
-            borderRadius: 'var(--radius-sm)',
-            fontWeight: 700,
-            fontSize: 13,
-            cursor: 'pointer',
-          }}
-        >
-          Logout
-        </button>
       </div>
     </aside>
   );

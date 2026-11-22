@@ -102,37 +102,120 @@ export const App: React.FC = () => {
       )}
 
       {currentView === 'pin' && (
-        <div style={{ padding: '60px 24px', textAlign: 'center', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div style={{ fontSize: 44, marginBottom: 12 }}>🔒</div>
-          <h2 style={{ fontSize: 22, fontWeight: 800 }}>Join Table Session</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 6, marginBottom: 28 }}>
-            Someone at your table has already started ordering. Ask them for the 4-digit PIN on their screen.
-          </p>
-
-          {pinError && (
-            <div style={{ background: '#fef2f2', color: '#b91c1c', padding: '10px 14px', borderRadius: 10, fontSize: 14, marginBottom: 20 }}>
-              {pinError}
+        <div style={{ padding: '40px 24px 32px', textAlign: 'center', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: '#ffffff' }}>
+          <div>
+            {/* Friendly Friends Dining Illustration */}
+            <div style={{ margin: '20px auto 28px', maxWidth: 280 }}>
+              <div
+                style={{
+                  height: 160,
+                  borderRadius: 20,
+                  background: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 64,
+                  boxShadow: 'var(--shadow-sm)',
+                }}
+              >
+                👥🍕
+              </div>
             </div>
-          )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <input
-              type="text"
-              placeholder="4-digit PIN"
-              value={pinInput}
-              onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
-              maxLength={4}
-              style={{ fontSize: 28, letterSpacing: 10, textAlign: 'center', fontWeight: 800 }}
-              autoFocus
-            />
+            {/* Title & Host info */}
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--dark)' }}>
+              Rohan has already opened Table 04
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 8, marginBottom: 28, lineHeight: 1.5 }}>
+              Enter the 4–6 digit Table PIN shown on your friend's screen
+            </p>
 
+            {pinError && (
+              <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#b91c1c', padding: '10px 14px', borderRadius: 10, fontSize: 14, marginBottom: 20 }}>
+                {pinError}
+              </div>
+            )}
+
+            {/* 4 Separate PIN Input Boxes */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 28 }}>
+              {[0, 1, 2, 3].map((idx) => {
+                const char = pinInput[idx] || '';
+                return (
+                  <input
+                    key={idx}
+                    id={`pin-box-${idx}`}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={char}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      const arr = pinInput.split('');
+                      arr[idx] = val;
+                      const next = arr.join('').slice(0, 4);
+                      setPinInput(next);
+                      if (val && idx < 3) {
+                        const nextEl = document.getElementById(`pin-box-${idx + 1}`);
+                        nextEl?.focus();
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Backspace' && !pinInput[idx] && idx > 0) {
+                        const prevEl = document.getElementById(`pin-box-${idx - 1}`);
+                        prevEl?.focus();
+                      }
+                    }}
+                    style={{
+                      width: 54,
+                      height: 60,
+                      textAlign: 'center',
+                      fontSize: 24,
+                      fontWeight: 800,
+                      borderRadius: 14,
+                      border: `2px solid ${char ? '#ff6b35' : '#e2e8f0'}`,
+                      background: char ? '#fffaf8' : '#ffffff',
+                      boxShadow: char ? '0 4px 12px rgba(255, 107, 53, 0.15)' : 'var(--shadow-sm)',
+                    }}
+                    autoFocus={idx === 0}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Join Table Cart Button */}
             <button
               onClick={() => startSessionFlow(pinInput)}
               disabled={initializing || pinInput.length < 4}
               className="btn-primary"
+              style={{ marginBottom: 16 }}
             >
-              {initializing ? 'Verifying PIN...' : 'Join Shared Cart ➔'}
+              {initializing ? 'Connecting...' : 'Join Table Cart'}
             </button>
+
+            {/* Divider */}
+            <div style={{ display: 'flex', alignItems: 'center', margin: '14px 0', color: '#94a3b8', fontSize: 13 }}>
+              <div style={{ flex: 1, height: 1, background: '#f1f5f9' }} />
+              <span style={{ padding: '0 12px' }}>or</span>
+              <div style={{ flex: 1, height: 1, background: '#f1f5f9' }} />
+            </div>
+
+            {/* Start Independent Cart */}
+            <button
+              onClick={() => startSessionFlow()}
+              style={{
+                background: 'transparent',
+                color: '#ff6b35',
+                fontSize: 14,
+                fontWeight: 700,
+                padding: '8px 16px',
+              }}
+            >
+              Start Independent Cart
+            </button>
+          </div>
+
+          <div style={{ fontSize: 12, color: '#94a3b8' }}>
+            TableQR • Collaborative Dining
           </div>
         </div>
       )}

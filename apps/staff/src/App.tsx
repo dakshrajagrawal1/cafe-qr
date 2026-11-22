@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useStaffStore } from './stores/staffStore.js';
 import { LoginPage } from './pages/LoginPage.js';
 import { Sidebar, StaffTab } from './components/Sidebar.js';
+import { DashboardOverviewPage } from './pages/DashboardOverviewPage.js';
 import { LiveOrdersPage } from './pages/LiveOrdersPage.js';
 import { LiveTableGridPage } from './pages/LiveTableGridPage.js';
 import { KitchenScreenPage } from './pages/KitchenScreenPage.js';
@@ -13,7 +14,7 @@ import { BusinessDayModal } from './components/BusinessDayModal.js';
 
 export const App: React.FC = () => {
   const { user } = useStaffStore();
-  const [currentTab, setCurrentTab] = useState<StaffTab>('orders');
+  const [currentTab, setCurrentTab] = useState<StaffTab>('dashboard');
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [showBusinessDayModal, setShowBusinessDayModal] = useState(false);
 
@@ -23,8 +24,8 @@ export const App: React.FC = () => {
       setCurrentTab('kitchen');
     } else if (user?.role === 'waiter') {
       setCurrentTab('waiter');
-    } else if (user?.role === 'owner') {
-      setCurrentTab('analytics');
+    } else {
+      setCurrentTab('dashboard');
     }
   }, [user?.role]);
 
@@ -42,6 +43,9 @@ export const App: React.FC = () => {
       />
 
       <main style={{ flex: 1, height: '100vh', background: 'var(--bg)', overflow: 'hidden' }}>
+        {currentTab === 'dashboard' && (
+          <DashboardOverviewPage onNavigateTab={setCurrentTab} />
+        )}
         {currentTab === 'analytics' && <AnalyticsPage />}
         {currentTab === 'orders' && (
           <LiveOrdersPage onOrderCountUpdate={setPendingOrdersCount} />
@@ -51,6 +55,10 @@ export const App: React.FC = () => {
         {currentTab === 'waiter' && <WaiterScreenPage />}
         {currentTab === 'offers' && <OffersPage />}
         {currentTab === 'settings' && <SettingsPage />}
+        {/* Fallbacks for super admin directory tabs */}
+        {(currentTab === 'cafes' || currentTab === 'users' || currentTab === 'subscriptions' || currentTab === 'audit') && (
+          <DashboardOverviewPage onNavigateTab={setCurrentTab} />
+        )}
       </main>
 
       {showBusinessDayModal && (
